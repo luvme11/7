@@ -1507,16 +1507,9 @@
     "푸터": "✚ W.W PERSONAL DIRECTORY",
     "링크": [
       {
-        "제목": "구도/룩",
+        "제목": "home",
         "부제": "",
-        "주소": "https://luvme11.github.io/prompt/prompts.html",
-        "썸네일": "",
-        "글": "♡"
-      },
-      {
-        "제목": "로라/게시판/에셋",
-        "부제": "",
-        "주소": "https://luvme11.github.io/homex/home.html",
+        "주소": "https://luvme11.github.io/NEW-HOME/index.html",
         "썸네일": "",
         "글": "♡"
       },
@@ -1631,5 +1624,5 @@
     "플레이어": 40,
     "기록": 100
   },
-  "_v": 1792852698650
+  "_v": 1792863791425
 }
