@@ -1393,9 +1393,33 @@
     "제목": "MUSIC PLAYER",
     "곡": [
       {
-        "제목": "Love and Hate",
-        "가수": "W.W",
-        "유튜브": "",
+        "제목": "Call Out My Name",
+        "가수": "The Weeknd",
+        "유튜브": "https://youtu.be/M4ZoCHID9GI?si=wuPjpGB3RG5YFAai",
+        "썸네일": "",
+        "음원": "",
+        "한마디": ""
+      },
+      {
+        "제목": "SLOW DANCING IN THE DARK",
+        "가수": "Joji",
+        "유튜브": "https://youtu.be/K3Qzzggn--s?si=c8XwagMYFXC3mo6b",
+        "썸네일": "",
+        "음원": "",
+        "한마디": ""
+      },
+      {
+        "제목": "One Of The Girls",
+        "가수": "The Weeknd, JENNIE & Lily Rose Depp",
+        "유튜브": "https://youtu.be/f1r0XZLNlGQ?si=LNswCaDOfyOMaOWh",
+        "썸네일": "",
+        "음원": "",
+        "한마디": ""
+      },
+      {
+        "제목": "matrix (bl studio loop)(slowed)",
+        "가수": "chrmbchrmb",
+        "유튜브": "https://youtu.be/RRGx0RKKVjE?si=cxh6uejIJKsUBxSA",
         "썸네일": "",
         "음원": "",
         "한마디": ""
@@ -1608,5 +1632,5 @@
     "범위": "btn",
     "파일": ""
   },
-  "_v": 1792810532979
+  "_v": 1792810772132
 }
