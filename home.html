@@ -1,3 +1,49 @@
+// BGM 버튼 (음원 파일 주소 또는 유튜브 링크)
+let audio=null, playing=false, bgmSrc='';
+let bgYT=null, bgYTok=false, bgYTq=null, bgYid='', bgLoaded='';
+function bgYidOf(u){ const m=String(u||'').match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/|\/live\/)([\w-]{11})/); return m?m[1]:''; }
+function bgYTEnsure(cb){
+  if(bgYT&&bgYTok){ cb(); return; }
+  bgYTq=cb; if(bgYT) return;
+  const make=()=>{ bgYT=new YT.Player('bgyt',{width:'320',height:'180',playerVars:{playsinline:1,controls:0,rel:0,disablekb:1},events:{
+    onReady:()=>{ bgYTok=true; try{ bgYT.setVolume(fxYTVol('bg')); }catch(e){} const f=bgYTq; bgYTq=null; if(f) f(); },
+    onStateChange:e=>{ if(!bgYid) return; if(e.data===0){ try{ bgYT.seekTo(0); bgYT.playVideo(); }catch(x){} } },   // 끝나면 처음부터 반복
+    onError:e=>{ bgmFail(e.data===101||e.data===150?'퍼가기가 막힌 영상이에요':'재생할 수 없는 영상이에요'); }
+  }}); };
+  ytApi(make,()=>bgmFail('유튜브를 불러오지 못했어요'));
+}
+function renderBgm(){
+  $('bgmname').textContent=브금이름;
+  if(브금주소===bgmSrc) return;
+  bgmSrc=브금주소; if(audio){ audio.pause(); audio=null; }
+  try{ if(bgYT&&bgYTok) bgYT.pauseVideo(); }catch(e){}
+  playing=false; $('play').textContent='▶'; bgLoaded='';
+  bgYid=bgYidOf(브금주소);
+  if(bgYid){   // 유튜브 링크: 눌렀을 때 바로 나오도록 미리 준비해 둬요
+    bgYTEnsure(()=>{ try{ bgYT.cueVideoById(bgYid); bgLoaded=bgYid; }catch(e){} });
+  }else if(브금주소){ audio=new Audio(U(브금주소)); audio.loop=true; audio.addEventListener('error',()=>{ if(playing) bgmFail('음원을 불러오지 못했어요 · 주소 확인'); }); }
+}
+let bgmFailT=0;
+function bgmFail(msg){   // 재생이 안 될 때 버튼만 ❚❚로 남지 않게, 이유를 잠깐 보여줘요
+  playing=false; $('play').textContent='▶';
+  const n=$('bgmname'); n.textContent=msg; clearTimeout(bgmFailT); bgmFailT=setTimeout(()=>{ n.textContent=브금이름; },4000);
+}
+renderBgm();
+$('play').onclick=()=>{
+  playing=!playing;
+  if(playing) try{ mpPauseAll(); }catch(e){}
+  $('play').textContent=playing?'❚❚':'▶';
+  if(bgYid){
+    if(playing){
+      const go=()=>{ try{ bgYT.setVolume(fxYTVol('bg')); if(bgLoaded===bgYid) bgYT.playVideo(); else{ bgYT.loadVideoById(bgYid); bgLoaded=bgYid; } }catch(e){} };
+      if(bgYT&&bgYTok) go(); else bgYTEnsure(()=>{ if(playing) go(); });
+    }else{ try{ if(bgYT&&bgYTok) bgYT.pauseVideo(); }catch(e){} }
+    return;
+  }
+  if(playing&&!audio){ bgmFail('BGM 음원 주소가 비어 있어요'); return; }
+  if(audio){ playing?audio.play().catch(()=>{ bgmFail('음원을 불러오지 못했어요 · 주소 확인'); }):audio.pause(); }
+};
+
 <!DOCTYPE html>
 <html lang="ko" class="cfgwait">
 <head>
@@ -1249,7 +1295,7 @@ a.rv-fa:hover .rv-fx{color:var(--amber)}
         </div>
         <div class="meta">
           <div><small>DEPLOYED</small><b id="wdate">2026.10.31</b></div>
-          <div><small>PAIR</small><b data-tx="winPair">SEVEN × RUBY</b></div>
+          <div><small>PAIR</small><b data-tx="winPair">7 × 22</b></div>
           <div><small>STATUS</small><span class="badge" data-tx="winBadge">LOVE AND HATE</span></div>
         </div>
         <div class="together"><small id="wlab">UNTIL RELEASE</small><span class="big" id="wbig">D-7</span></div>
@@ -1311,7 +1357,7 @@ a.rv-fa:hover .rv-fx{color:var(--amber)}
   <div class="bp-card">
     <div class="hd"><div><small>DRAWING N° AM-01 · ARMORY</small><b>SPEC SHEET</b></div><i>✚</i></div>
     <div class="gr">
-      <div><small>FIREPOWER</small><b>SEVEN</b></div><div><small>SUPPORT</small><b>RUBY</b></div>
+      <div><small>FIREPOWER</small><b>7</b></div><div><small>SUPPORT</small><b>22</b></div>
       <div><small>RELEASE</small><b class="a" id="bpd">D-7</b></div><div><small>TODAY</small><b id="bpt"></b></div>
       <div><small>DRAWN BY</small><b>↳ W.W</b></div><div><small>SCALE</small><b>1 : 1</b></div>
     </div>
@@ -1383,6 +1429,7 @@ a.rv-fa:hover .rv-fx{color:var(--amber)}
   </div>
 </div>
 <div class="mp-ytbox" aria-hidden="true"><div id="mpyt"></div></div>
+<div class="mp-ytbox" aria-hidden="true"><div id="bgyt"></div></div>
 
 <!-- MEMO 메모장 -->
 <div class="mm gone" id="mm" role="dialog" aria-label="Memo">
@@ -1944,7 +1991,7 @@ let 문구 = {
   chip:'WORLD’S WORST · OPEN 24H', dial:'DAY 7×22',
   kickerL:'WORLD’S WORST · MAIN SQUAD', kickerR:'SEVEN × RUBY · W.W',
   title:'W.W', nameA:'SEVEN', nameB:'RUBY', tag1:'LOVE AND HATE ✦', tag2:'7.62 mm · LONG RANGE // OPEN 24H',
-  winTitle:'✚ W.W COMMAND POST', winNo:'No. WW-1031', winPair:'SEVEN × RUBY', winBadge:'LOVE AND HATE',
+  winTitle:'✚ W.W COMMAND POST', winNo:'No. WW-1031', winPair:'7 × 22', winBadge:'LOVE AND HATE',
   winFoot:'DEAD ZONE, CAPTURING, HVT\nFIREPOWER, MEDICS, LOGISTICS',
   dockBtn:'✚ W.W', credit1:'© 7x22 · W.W', credit2:'SEVEN × RUBY.'
 };
@@ -2136,14 +2183,20 @@ function renderBgm(){
   if(브금주소===bgmSrc) return;
   bgmSrc=브금주소; if(audio){ audio.pause(); audio=null; }
   playing=false; $('play').textContent='▶';
-  if(브금주소){ audio=new Audio(U(브금주소)); audio.loop=true; }
+  if(브금주소){ audio=new Audio(U(브금주소)); audio.loop=true; audio.addEventListener('error',()=>{ if(playing) bgmFail('음원을 불러오지 못했어요 · 주소 확인'); }); }
+}
+let bgmFailT=0;
+function bgmFail(msg){   // 재생이 안 될 때 버튼만 ❚❚로 남지 않게, 이유를 잠깐 보여줘요
+  playing=false; $('play').textContent='▶';
+  const n=$('bgmname'); n.textContent=msg; clearTimeout(bgmFailT); bgmFailT=setTimeout(()=>{ n.textContent=브금이름; },4000);
 }
 renderBgm();
 $('play').onclick=()=>{
   playing=!playing;
   if(playing) try{ mpPauseAll(); }catch(e){}
   $('play').textContent=playing?'❚❚':'▶';
-  if(audio){ playing?audio.play().catch(()=>{}):audio.pause(); }
+  if(playing&&!audio){ bgmFail(/youtu\.?be/i.test(브금주소)?'유튜브 링크는 BGM 버튼에서 안 돼요':'BGM 음원 주소가 비어 있어요'); return; }
+  if(audio){ playing?audio.play().catch(()=>{ bgmFail('음원을 불러오지 못했어요 · 주소 확인'); }):audio.pause(); }
 };
 
 /* ===== SQUAD 프로필 창 ===== */
@@ -2574,7 +2627,7 @@ function fxGain(el){   // 관리자에서 정한 음악별 크기 배율 (클릭
   return fxPct(k,100)/100;
 }
 function fxYTVol(kind){   // 유튜브 플레이어는 0~100 정수 (전체 음량 × 배율)
-  const base=kind==='rv'?rvVol:100, k=fxPct(kind==='rv'?음량.기록:음량.플레이어,100)/100;
+  const base=kind==='rv'?rvVol:100, k=fxPct(kind==='rv'?음량.기록:kind==='bg'?음량.배경음:음량.플레이어,100)/100;
   return Math.round(Math.max(0,Math.min(100,base*k*fxMaster())));
 }
 function fxVolSync(){   // 설정이 바뀌면: 아직 직접 만진 적 없는 방문자는 관리자가 정한 기본 음량으로
@@ -2589,7 +2642,8 @@ function fxApplyOne(el){
 }
 function fxApplyAll(){ [()=>audio,()=>pAudio,()=>mpA,()=>rvA].forEach(g=>{ try{ fxApplyOne(g()); }catch(e){} });
   try{ if(mpYT&&mpYTok) mpYT.setVolume(fxYTVol('mp')); }catch(e){}
-  try{ if(rvYT&&rvYTok) rvYT.setVolume(fxYTVol('rv')); }catch(e){} }
+  try{ if(rvYT&&rvYTok) rvYT.setVolume(fxYTVol('rv')); }catch(e){}
+  try{ if(bgYT&&bgYTok) bgYT.setVolume(fxYTVol('bg')); }catch(e){} }
 (function(){ const op=HTMLMediaElement.prototype.play; HTMLMediaElement.prototype.play=function(){ try{ fxApplyOne(this); }catch(e){} return op.apply(this,arguments); }; })();
 let fxAC=null;
 function fxCtx(){
@@ -2952,7 +3006,8 @@ function tabRec(){
       '<div class="frow">'+F('폴더 이름',p+'.이름')+F('아이콘',p+'.아이콘',{sel:RC_ICONS})+'</div>');
   }).join('');
   const pr=PL.map((t,i)=>{ const p='기록.글.'+i;
-    return item((i+1)+'. '+esc(String(t.제목||'').slice(0,24)),p,
+    const fo=FL.find(f=>f.키===t.폴더), tg=t.폴더==='__n'?'공지':(fo?String(fo.이름||''):'');
+    return item((i+1)+'. '+(tg?'['+esc(tg)+'] ':'')+esc(String(t.제목||'').slice(0,24)),p,
       '<div class="frow">'+F('폴더',p+'.폴더',{sel:fsel})+F('날짜',p+'.날짜',{ph:'2026-10-24'})+'</div>'
       +F('제목',p+'.제목')
       +F('카드에 보일 한 줄 (선택)',p+'.요약',{ph:'카드 제목 아래에 작게 보여요'})
@@ -2973,6 +3028,7 @@ function tabRec(){
           +F('카드 아래에 보일 주소 글자 (비우면 파일 주소 그대로)',q+'.표시주소',{ph:'https://…'})); }).join('')
       +btn('＋ 첨부 추가','data-add="'+p+'.첨부" data-tpl="rcatt"')
       +F('글 형식',p+'.형식',{sel:[['text','일반 글 (간단한 꾸밈 문법)'],['html','HTML (태그로 직접 꾸미기)']]})
+      +'<div class="frow-b">'+btn('↗ 새 창에서 크게 쓰기','data-go="rec-write" data-w="'+p+'.본문"','fill')+'</div>'
       +F('본문',p+'.본문',{ta:true,rows:12})
       +F('글 번호 (비우면 순서대로 자동)',p+'.번호',{ph:'14'}));
   }).join('');
@@ -2980,8 +3036,85 @@ function tabRec(){
       +'<div class="frow">'+F('맨 위 폴더 이름 (경로 맨 앞)','기록.루트')+F('"전체" 글자','기록.전체이름')+'</div>'
       +'<div class="frow">'+F('글 창 이름 (예: W.W RECORD)','기록.문서이름')+F('창 아래 글자','기록.푸터')+'</div>')
   + sec('폴더 ('+FL.length+')','<div class="hint">RECORDS 창에 보이는 카테고리 폴더예요. 폴더 이름을 바꿔도 안에 든 글은 그대로 따라와요. 순서는 ▲▼로 바꿔요.</div>'+fr+btn('＋ 폴더 추가','data-add="기록.폴더" data-tpl="rcfolder"'))
-  + sec('글 ('+PL.length+')','<div class="hint"><b>일반 글 문법</b><br>빈 줄 = 문단 나누기 (빈 줄이 더 많으면 간격이 더 넓어져요)<br><b>**굵게**</b> · <b>^^흐린 글씨^^</b> · 줄 맨 앞에 <b>&gt; </b>를 붙이면 인용 · <b>---</b> 한 줄은 초록색 심전도 구분선(실제 심박 모니터처럼 흐르며 박동하고 가끔 지지직 흔들려요) · <b>## 소제목</b> · <b>- 목록</b> · <b>![](사진주소)</b> 사진 · <b>[글자](https://…)</b> 링크<br><b>HTML</b>로 바꾸면 태그와 style 속성으로 마음껏 꾸밀 수 있어요 (&lt;blockquote&gt; 인용과 &lt;hr&gt; (줄 긋는 태그)는 자동으로 인용 모양 / 초록 심박 구분선이 돼요. script·style 태그는 안전을 위해 지워져요.)<br>글은 날짜가 최신인 순서로 보여요.</div>'+pr+btn('＋ 글 추가','data-add="기록.글" data-tpl="rcpost"'));
+  + sec('글 ('+PL.length+')','<div class="hint"><b>일반 글 문법</b><br>빈 줄 = 문단 나누기 (빈 줄이 더 많으면 간격이 더 넓어져요)<br><b>**굵게**</b> · <b>^^흐린 글씨^^</b> · 줄 맨 앞에 <b>&gt; </b>를 붙이면 인용 · <b>---</b> 한 줄은 초록색 심전도 구분선(실제 심박 모니터처럼 흐르며 박동하고 가끔 지지직 흔들려요) · <b>## 소제목</b> · <b>- 목록</b> · <b>![](사진주소)</b> 사진 · <b>[글자](https://…)</b> 링크<br><b>HTML</b>로 바꾸면 태그와 style 속성으로 마음껏 꾸밀 수 있어요 (&lt;blockquote&gt; 인용과 &lt;hr&gt; (줄 긋는 태그)는 자동으로 인용 모양 / 초록 심박 구분선이 돼요. script·style 태그는 안전을 위해 지워져요.)<br>글은 날짜가 최신인 순서로 보여요.</div>'+pr+btn('＋ 글 추가','data-add="기록.글" data-tpl="rcpost"')+' '+btn('＋ 공지 추가 (NOTICE)','data-go="rec-add-notice"'));
 }
+
+/* ===== RECORDS 큰 글쓰기 창 (관리자 → RECORDS → '새 창에서 크게 쓰기') ===== */
+(function(){
+  const st=document.createElement('style');
+  st.textContent=
+   '.rcw-bg{position:fixed;inset:0;z-index:8499;background:rgba(5,4,3,.72)}'
+  +'.rcw{position:fixed;z-index:8500;left:50%;top:12px;transform:translateX(-50%);width:min(1000px,calc(100vw - 24px));height:calc(100vh - 24px);display:flex;flex-direction:column;background:var(--ink);border:1px solid var(--line);box-shadow:0 20px 70px rgba(0,0,0,.75),0 0 40px rgba(255,120,30,.12)}'
+  +'.rcw-top{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--amber);color:#1a1208;user-select:none}'
+  +'.rcw-top b{font-size:13px;letter-spacing:1px}.rcw-top small{font-size:9px;font-weight:800;letter-spacing:1.2px;opacity:.7}.rcw-top .sp{flex:1}'
+  +'.rcw-top button{width:28px;height:28px;border:0;background:#1a1208;color:var(--amber);font:900 15px Consolas,monospace;cursor:pointer}'
+  +'.rcw-b{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding:12px 14px}'
+  +'.rcw-b input,.rcw-b textarea{width:100%;background:#0d0b08;color:var(--paper);border:1px solid var(--line);padding:10px 12px;font:inherit;font-size:14px;outline:none}'
+  +'.rcw-b input:focus,.rcw-b textarea:focus{border-color:var(--amber)}'
+  +'.rcw-b textarea{flex:1;min-height:0;resize:none;line-height:1.75;font-size:15px}'
+  +'.rcw-tb{display:flex;flex-wrap:wrap;gap:6px}'
+  +'.rcw-tb button,.rcw-ft button{padding:6px 10px;background:transparent;color:var(--amber);border:1px solid var(--line);font:800 11px Consolas,monospace;letter-spacing:.5px;cursor:pointer}'
+  +'.rcw-tb button:hover,.rcw-ft button:hover{background:rgba(255,176,32,.14)}'
+  +'.rcw-ft{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}'
+  +'.rcw-ft .msg{flex:1;min-width:120px;font-size:11px;opacity:.8}.rcw-ft .cnt{font-size:11px;opacity:.65}'
+  +'.rcw-ft button.go{background:var(--amber);color:#1a1208;border-color:var(--amber)}';
+  document.head.appendChild(st);
+  let el=null, bg=null, obs=null;
+  window.recWriter=function(path){
+    if(el||!path||!aw||!aw.cfg) return;
+    const tpath=path.replace(/\.본문$/,'.제목'), root=aw.cfg;
+    let tm=0;
+    const flush=()=>{ clearTimeout(tm); try{ awApply(); }catch(e){} };
+    const changed=()=>{ awDirty(); clearTimeout(tm); tm=setTimeout(()=>{ try{ awApply(); }catch(e){} },500); };
+    bg=document.createElement('div'); bg.className='rcw-bg';
+    el=document.createElement('div'); el.className='rcw'; el.setAttribute('role','dialog'); el.setAttribute('aria-label','RECORD WRITER');
+    el.innerHTML=
+      '<div class="rcw-top"><b>✎ RECORD WRITER</b><small>글쓰기 전용 창</small><span class="sp"></span><button type="button" data-x="close" title="닫기 (Esc)">×</button></div>'
+     +'<div class="rcw-b">'
+       +'<input type="text" data-r="title" placeholder="제목" autocomplete="off">'
+       +'<div class="rcw-tb">'
+         +'<button type="button" data-f="b" title="Ctrl+B">굵게</button><button type="button" data-f="d">흐리게</button><button type="button" data-f="q">인용</button>'
+         +'<button type="button" data-f="h">소제목</button><button type="button" data-f="l">목록</button><button type="button" data-f="hr">구분선</button><button type="button" data-f="img">사진</button><button type="button" data-f="a">링크</button>'
+       +'</div>'
+       +'<textarea data-r="body" placeholder="여기에 글을 써요. 빈 줄 = 문단 나누기" spellcheck="false"></textarea>'
+     +'</div>'
+     +'<div class="rcw-ft"><span class="cnt" data-r="cnt"></span><span class="msg" data-r="msg">화면에는 바로 반영돼요. 저장은 아래 버튼이에요.</span>'
+       +'<button type="button" data-x="save">💾 저장 (GitHub)</button><button type="button" class="go" data-x="close">닫기</button></div>';
+    document.body.appendChild(bg); document.body.appendChild(el);
+    const ti=el.querySelector('[data-r="title"]'), ta=el.querySelector('[data-r="body"]'), cnt=el.querySelector('[data-r="cnt"]'), msg=el.querySelector('[data-r="msg"]');
+    ti.value=gp(root,tpath)||''; ta.value=gp(root,path)||'';
+    const count=()=>{ cnt.textContent=ta.value.length.toLocaleString()+'자'; };
+    count();
+    ti.addEventListener('input',()=>{ sp(root,tpath,ti.value); changed(); });
+    ta.addEventListener('input',()=>{ sp(root,path,ta.value); count(); changed(); });
+    // 서식 버튼: 선택한 글자를 감싸거나 줄 앞에 붙여요
+    const sel=()=>[ta.selectionStart,ta.selectionEnd];
+    const put=(s,e,txt,a,b)=>{ ta.setRangeText(txt,s,e,'end'); ta.setSelectionRange(a==null?s+txt.length:a,b==null?s+txt.length:b); ta.focus(); ta.dispatchEvent(new Event('input')); };
+    const wrap=(l,r)=>{ const [s,e]=sel(), v=ta.value.slice(s,e); put(s,e,l+v+r,s+l.length,s+l.length+v.length); };
+    const pre=pf=>{ const [s,e]=sel(), v=ta.value, a=v.lastIndexOf('\n',s-1)+1, b0=v.indexOf('\n',e), b=b0<0?v.length:b0;
+      const out=v.slice(a,b).split('\n').map(x=>pf+x).join('\n'); put(a,b,out,a,a+out.length); };
+    const ins=txt=>{ const [s,e]=sel(); put(s,e,txt); };
+    const FN={ b:()=>wrap('**','**'), d:()=>wrap('^^','^^'), q:()=>pre('> '), h:()=>pre('## '), l:()=>pre('- '),
+      hr:()=>ins('\n\n---\n\n'), img:()=>ins('![](사진주소)'), a:()=>wrap('[','](https://)') };
+    el.addEventListener('click',e=>{
+      const f=e.target.closest('[data-f]'); if(f){ FN[f.dataset.f]&&FN[f.dataset.f](); return; }
+      const x=e.target.closest('[data-x]'); if(!x) return;
+      if(x.dataset.x==='save'){ const sb=$('awsave'); if(sb&&!sb.disabled){ flush(); sb.click(); msg.textContent='저장 중…'; } else msg.textContent='GITHUB 연결이 안 돼 있어요'; }
+      else close();
+    });
+    ta.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='b'){ e.preventDefault(); FN.b(); } });
+    const key=e=>{ if(e.key==='Escape'){ e.preventDefault(); close(); } };
+    document.addEventListener('keydown',key,true);
+    // 관리자의 저장 결과 문구를 여기서도 보여줘요
+    const am=$('awmsg'); if(am){ obs=new MutationObserver(()=>{ if(el) msg.textContent=am.textContent||''; }); obs.observe(am,{childList:true,characterData:true,subtree:true}); }
+    function close(){
+      flush(); document.removeEventListener('keydown',key,true); if(obs){ obs.disconnect(); obs=null; }
+      el.remove(); bg.remove(); el=null; bg=null;
+      try{ if(aw.tab==='rec') awRender(true); }catch(e){}
+    }
+    ta.focus();
+  };
+})();
 
 // ----- 그리기 -----
 const awMsg=(t,c)=>{ const m=$('awmsg'); m.textContent=t||''; m.className='aw-msg'+(c?' '+c:''); };
@@ -3148,6 +3281,11 @@ awBody.addEventListener('click',e=>{
   else if(d.go==='mem-add'){ aw.cfg.멤버.push(clone(TPL.mem)); aw.m=aw.cfg.멤버.length-1; awChanged(); }
   else if(d.go==='mem-del'){
     if(aw.cfg.멤버.length>1&&confirm('"'+aw.cfg.멤버[aw.m].이름+'" 멤버를 삭제할까요?')){ aw.cfg.멤버.splice(aw.m,1); aw.m=0; awChanged(); }
+  }
+  else if(d.go==='rec-write'){ recWriter(d.w); }
+  else if(d.go==='rec-add-notice'){   // NOTICE 메뉴에 뜨는 공지 글을 만들고 바로 큰 글쓰기 창을 열어요
+    const L=aw.cfg.기록.글||(aw.cfg.기록.글=[]), o=clone(TPL.rcpost); rcTplFix('rcpost',o); o.폴더='__n'; o.제목='새 공지';
+    L.push(o); awChanged(); try{ recWriter('기록.글.'+(L.length-1)+'.본문'); }catch(e){}
   }
   else if(d.go==='fx-test'){ fxPlay(true); }
   else if(d.go==='fx-cur-clear'){ aw.cfg.커서.기본=''; aw.cfg.커서.클릭=''; awChanged(); }
@@ -3555,7 +3693,7 @@ function mpRender(){   // 설정을 화면에 맞춰요 (재생 중인 소리는
 (function(){ const eq=$('mpeq'); let h=''; for(let i=0;i<44;i++) h+='<i style="--h:'+(6+Math.round(Math.abs(Math.sin(i*1.7)*Math.cos(i*.45))*18))+'px;--d:'+(-(i*.13%.8)).toFixed(2)+'s"></i>'; eq.innerHTML=h; })();
 
 function mpPauseAll(keep){ try{ if(mpA) mpA.pause(); if(mpYT&&mpYTok) mpYT.pauseVideo(); }catch(e){} mpSetOn(false); if(!keep){ try{ rvPause(); }catch(e){} } }
-function mpStopSite(){ try{ if(playing){ playing=false; $('play').textContent='▶'; if(audio) audio.pause(); } stopPills(); }catch(e){} try{ rvPause(); }catch(e){} }
+function mpStopSite(){ try{ if(playing){ playing=false; $('play').textContent='▶'; if(audio) audio.pause(); try{ if(bgYT&&bgYTok) bgYT.pauseVideo(); }catch(e){} } stopPills(); }catch(e){} try{ rvPause(); }catch(e){} }
 function mpYTEnsure(cb){
   if(mpYT&&mpYTok){ cb(); return; }
   mpYTq=cb; if(mpYT) return;
