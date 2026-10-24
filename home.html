@@ -1950,8 +1950,9 @@ let 문구 = {
 };
 let 메뉴 = [{이름:'HOME',주소:'#'},{이름:'CATEGORY',주소:'#'},{이름:'NOTICE',주소:'#'},{이름:'INFO',주소:''}];
 let 커서 = {기본:'', 클릭:'', 크기:32, 기준:'tl'};   // 마우스 커서 (관리자 → CURSOR·SOUND 탭에서도 바꿀 수 있어요). 기준: 'tl'=왼쪽 위, 'center'=가운데
+let 음량 = {기본:40, 배경음:100, 플레이어:100, 기록:100};   // 소리 크기 (관리자 → CURSOR·SOUND 탭에서도 고칠 수 있어요). 기본=처음 온 방문자의 전체 음량(0~100), 나머지는 각 음악의 크기 배율(0~100)
 let 효과음 = {사용:true, 종류:'pop', 음량:50, 범위:'btn', 파일:''};   // 클릭 소리. 종류: pop/bubble/chime/sparkle/tick/wood/soft/file · 범위: 'btn'=클릭 가능한 곳만, 'all'=모든 클릭
-const 기본설정 = JSON.parse(JSON.stringify({공개일,준비기간,파비콘,사진주소,브금이름,브금주소,띠글자,앱목록,멤버,채팅,문구,메뉴,메모,음악,보고서,링크허브,기록,커서,효과음}));
+const 기본설정 = JSON.parse(JSON.stringify({공개일,준비기간,파비콘,사진주소,브금이름,브금주소,띠글자,앱목록,멤버,채팅,문구,메뉴,메모,음악,보고서,링크허브,기록,커서,효과음,음량}));
 
 const $=id=>document.getElementById(id), pad=n=>String(n).padStart(2,'0');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -2563,15 +2564,32 @@ document.addEventListener('mouseover',e=>{
 },true);
 
 /* 전체 소리 (BGM · 플레이어 · 클릭음 · 기록 음원) — 방문자가 독의 스피커 버튼에서 조절해요 */
-let fxVS={v:100,m:false};
-try{ const sv=JSON.parse(localStorage.getItem('ww_vol')||'null'); if(sv&&typeof sv==='object') fxVS={v:Math.max(0,Math.min(100,Number(sv.v)||0)),m:!!sv.m}; if(sv&&sv.v==null) fxVS.v=100; }catch(e){}
+const fxPct=(x,d)=>{ x=Number(x); return isNaN(x)?d:Math.max(0,Math.min(100,x)); };
+let fxVS={v:fxPct(음량.기본,40),m:false}, fxVSaved=false;
+try{ const sv=JSON.parse(localStorage.getItem('ww_vol')||'null'); if(sv&&typeof sv==='object'){ fxVS={v:Math.max(0,Math.min(100,Number(sv.v)||0)),m:!!sv.m}; fxVSaved=true; if(sv.v==null) fxVS.v=fxPct(음량.기본,40); } }catch(e){}
 const fxMaster=()=>fxVS.m?0:Math.max(0,Math.min(1,fxVS.v/100));
+function fxGain(el){   // 관리자에서 정한 음악별 크기 배율 (클릭음은 자기 음량을 따로 가져서 1)
+  let k=100;
+  try{ if(el===audio) k=음량.배경음; else if(el===pAudio||el===mpA) k=음량.플레이어; else if(el===rvA) k=음량.기록; }catch(e){}
+  return fxPct(k,100)/100;
+}
+function fxYTVol(kind){   // 유튜브 플레이어는 0~100 정수 (전체 음량 × 배율)
+  const base=kind==='rv'?rvVol:100, k=fxPct(kind==='rv'?음량.기록:음량.플레이어,100)/100;
+  return Math.round(Math.max(0,Math.min(100,base*k*fxMaster())));
+}
+function fxVolSync(){   // 설정이 바뀌면: 아직 직접 만진 적 없는 방문자는 관리자가 정한 기본 음량으로
+  if(!fxVSaved&&!fxVS.m) fxVS.v=fxPct(음량.기본,40);
+  try{ if(window._fxPaint) window._fxPaint(); }catch(e){}
+  try{ fxApplyAll(); }catch(e){}
+}
 function fxApplyOne(el){
   if(!el) return; let base=1;
   if(el._fxbase!=null) base=el._fxbase; else { try{ if(el===rvA) base=rvVol/100; }catch(e){} }
-  try{ el.volume=Math.max(0,Math.min(1,base*fxMaster())); }catch(e){}
+  try{ el.volume=Math.max(0,Math.min(1,base*fxMaster()*fxGain(el))); }catch(e){}
 }
-function fxApplyAll(){ [()=>audio,()=>pAudio,()=>mpA,()=>rvA].forEach(g=>{ try{ fxApplyOne(g()); }catch(e){} }); }
+function fxApplyAll(){ [()=>audio,()=>pAudio,()=>mpA,()=>rvA].forEach(g=>{ try{ fxApplyOne(g()); }catch(e){} });
+  try{ if(mpYT&&mpYTok) mpYT.setVolume(fxYTVol('mp')); }catch(e){}
+  try{ if(rvYT&&rvYTok) rvYT.setVolume(fxYTVol('rv')); }catch(e){} }
 (function(){ const op=HTMLMediaElement.prototype.play; HTMLMediaElement.prototype.play=function(){ try{ fxApplyOne(this); }catch(e){} return op.apply(this,arguments); }; })();
 let fxAC=null;
 function fxCtx(){
@@ -2623,7 +2641,7 @@ const 설정파일='site-config.json', LS_CFG='ww_cfg_local', LS_GH='ww_gh';
 const lsGet=k=>{ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } };
 const lsSet=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
 const clone=o=>JSON.parse(JSON.stringify(o));
-const 현재설정=()=>clone({공개일,준비기간,파비콘,사진주소,브금이름,브금주소,띠글자,앱목록,멤버,채팅,문구,메뉴,메모,음악,보고서,링크허브,기록,커서,효과음});
+const 현재설정=()=>clone({공개일,준비기간,파비콘,사진주소,브금이름,브금주소,띠글자,앱목록,멤버,채팅,문구,메뉴,메모,음악,보고서,링크허브,기록,커서,효과음,음량});
 
 function applyTexts(){
   document.querySelectorAll('[data-tx]').forEach(el=>{
@@ -2644,7 +2662,7 @@ function renderNav(){
 const FAV_DEF="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 22'%3E%3Cpath d='M2 9Q2 2 6 .5Q10 2 10 9Z' fill='%23c4622a'/%3E%3Crect x='2' y='9' width='8' height='1.6' fill='%23e4b04a'/%3E%3Crect x='2' y='10.6' width='8' height='10.4' rx='.6' fill='%23d9a441'/%3E%3C/svg%3E";
 function applyFavicon(){ const l=$('favicon'); if(!l) return; const u=파비콘?U(파비콘):FAV_DEF; l.removeAttribute('type'); if(l.getAttribute('href')!==u) l.setAttribute('href',u); }
 function renderAll(){
-  applyFavicon(); try{ applyFx(); }catch(e){} applyTexts(); renderNav(); renderApps(); renderTicker(); renderPhoto(); renderBgm(); 디데이(); cApplyChat(); try{ mmRender(); }catch(e){} try{ mpRender(); }catch(e){} try{ rpRender(); }catch(e){} try{ lhRender(); }catch(e){} try{ rcRefresh(); }catch(e){}
+  applyFavicon(); try{ applyFx(); }catch(e){} try{ fxVolSync(); }catch(e){} applyTexts(); renderNav(); renderApps(); renderTicker(); renderPhoto(); renderBgm(); 디데이(); cApplyChat(); try{ mmRender(); }catch(e){} try{ mpRender(); }catch(e){} try{ rpRender(); }catch(e){} try{ lhRender(); }catch(e){} try{ rcRefresh(); }catch(e){}
   if($('squad').classList.contains('open')){ const sc=$('pwbody').scrollTop; renderSquad(); $('pwbody').scrollTop=sc; }
 }
 function applyConfig(c){
@@ -2668,6 +2686,7 @@ function applyConfig(c){
   if(c.기록&&Array.isArray(c.기록.글)&&Array.isArray(c.기록.폴더)) 기록={...기본설정.기록,...c.기록};
   if(c.커서&&typeof c.커서==='object') 커서={...기본설정.커서,...c.커서};
   if(c.효과음&&typeof c.효과음==='object') 효과음={...기본설정.효과음,...c.효과음};
+  if(c.음량&&typeof c.음량==='object') 음량={...기본설정.음량,...c.음량};
   renderAll();
 }
 // 사이트가 열릴 때: site-config.json (배포된 설정)을 읽어요. 이 브라우저에 더 새로운 저장본이 있으면(배포 대기 중) 그걸 써요
@@ -2786,6 +2805,7 @@ function tabFx(){
   const c=aw.cfg;
   if(!c.커서) c.커서=clone(기본설정.커서);
   if(!c.효과음) c.효과음=clone(기본설정.효과음);
+  if(!c.음량) c.음량=clone(기본설정.음량);
   return sec('MOUSE CURSOR',
       '<div class="hint">배경이 <b>투명한 PNG</b>를 올리면 사이트 전체의 마우스 커서가 그 그림으로 바뀌어요. 올린 그림은 아래 <b>크기</b>에 맞게 자동으로 줄여서 써요. (브라우저 제한 때문에 <b>32px 안팎</b>을 추천해요. 크게 하면 화면 가장자리·주소창 근처에서 일반 커서로 돌아갈 수 있어요.) 터치 기기(폰·태블릿)에서는 커서가 없어서 적용되지 않아요.</div>'
       +F('기본 커서 (PNG)','커서.기본',{up:'image',ph:'img/cursor.png'})
@@ -2799,7 +2819,11 @@ function tabFx(){
       +F('음량 (0~100)','효과음.음량',{k:'num'})+'</div>'
       +F('소리가 나는 곳','효과음.범위',{sel:[['btn','버튼·링크 등 클릭 가능한 곳만'],['all','화면 어디를 눌러도']]})
       +F('내 소리 파일 (종류가 "내 파일"일 때)','효과음.파일',{up:'audio',ph:'music/click.mp3'})
-      +'<div class="frow-b">'+btn('▶ 미리듣기','data-go="fx-test"','fill')+'</div>');
+      +'<div class="frow-b">'+btn('▶ 미리듣기','data-go="fx-test"','fill')+'</div>')
+  + sec('VOLUME (음악 소리 크기)',
+      '<div class="hint">방문자가 처음 들어왔을 때 나는 소리 크기를 정해요. <b>기본 음량</b>은 우측 아래 스피커 버튼(전체 음량)의 시작값이에요. 방문자가 직접 슬라이더를 움직였다면 그 값이 우선이에요. 아래 <b>배율</b>은 음악마다 따로 줄이는 값이에요 (100 = 그대로, 50 = 절반). 최종 소리 = 전체 음량 × 배율이고, 유튜브로 재생되는 곡에도 똑같이 적용돼요. 클릭 소리는 위 CLICK SOUND의 음량을 따로 써요.</div>'
+      +F('기본 음량 (0~100, 처음 온 방문자)','음량.기본',{k:'num'})
+      +'<div class="frow">'+F('배경음 배율 (0~100)','음량.배경음',{k:'num'})+F('PLAYER 배율 (0~100)','음량.플레이어',{k:'num'})+F('RECORDS 배율 (0~100)','음량.기록',{k:'num'})+'</div>');
 }
 function tabText(){
   const f=TXT.map(t=>F(t[1],'문구.'+t[0],t[0]==='winFoot'?{ta:1,rows:2}:{})).join('');
@@ -3536,7 +3560,7 @@ function mpYTEnsure(cb){
   if(mpYT&&mpYTok){ cb(); return; }
   mpYTq=cb; if(mpYT) return;
   const make=()=>{ mpYT=new YT.Player('mpyt',{width:'320',height:'180',playerVars:{playsinline:1,controls:0,rel:0,disablekb:1},events:{
-    onReady:()=>{ mpYTok=true; const f=mpYTq; mpYTq=null; if(f) f(); },
+    onReady:()=>{ mpYTok=true; try{ mpYT.setVolume(fxYTVol('mp')); }catch(e){} const f=mpYTq; mpYTq=null; if(f) f(); },
     onStateChange:e=>{ if(mpSrc!=='y') return; if(e.data===1) mpSetOn(true); else if(e.data===2) mpSetOn(false); else if(e.data===0) mpEnd(); },
     onError:e=>{ mpSetOn(false); mpMsg(e.data===101||e.data===150?'퍼가기가 막힌 영상이에요':'재생할 수 없는 영상이에요'); }
   }}); };
@@ -3556,7 +3580,7 @@ function mpLoad(i,go){
     if(go){ mpStopSite(); mpA.play().catch(()=>{}); }
   }else if(id){
     mpSrc='y'; mpMsg('불러오는 중…');
-    mpYTEnsure(()=>{ mpCap(t.한마디||''); if(go){ mpStopSite(); mpYT.loadVideoById(id); } else mpYT.cueVideoById(id); });
+    mpYTEnsure(()=>{ try{ mpYT.setVolume(fxYTVol('mp')); }catch(e){} mpCap(t.한마디||''); if(go){ mpStopSite(); mpYT.loadVideoById(id); } else mpYT.cueVideoById(id); });
   }else{ mpSrc=''; if(go) mpMsg('유튜브 링크나 음원 주소를 넣어 주세요'); }
 }
 function mpNext(go){
@@ -4508,7 +4532,7 @@ function rvSetOn(v){
 function rvPause(){ try{ if(rvA) rvA.pause(); if(rvYT&&rvYTok&&rvSrc==='y') rvYT.pauseVideo(); }catch(e){} rvSetOn(false); }
 function rvSetVol(v){
   rvVol=v; const s=$('rvvol'); if(s) s.style.setProperty('--p',v+'%');
-  try{ if(rvA) rvA.volume=v/100*fxMaster(); if(rvYT&&rvYTok) rvYT.setVolume(v); }catch(e){}
+  try{ if(rvA) fxApplyOne(rvA); if(rvYT&&rvYTok) rvYT.setVolume(fxYTVol('rv')); }catch(e){}
 }
 function rvYTEnsure(cb){
   if(rvYT&&rvYTok){ cb(); return; }
@@ -4533,10 +4557,10 @@ function rvLoad(t){   // 글을 열 때 소리 준비 (자동 재생은 안 해�
       rvA.addEventListener('ended',()=>{ if(rvSrc==='a') rvSetOn(false); });
       rvA.addEventListener('error',()=>{ if(rvSrc==='a') rvMsg('음원을 불러오지 못했어요'); });
     }
-    rvSrc='a'; rvA.src=U(t.음원); rvA.volume=rvVol/100*fxMaster();
+    rvSrc='a'; rvA.src=U(t.음원); fxApplyOne(rvA);
   }else if(id){
     rvSrc='y'; rvId=id;
-    rvYTEnsure(()=>{ if(rvSrc!=='y'||rvId!==id) return; try{ rvYT.setVolume(rvVol); rvYT.cueVideoById(id); }catch(e){} });
+    rvYTEnsure(()=>{ if(rvSrc!=='y'||rvId!==id) return; try{ rvYT.setVolume(fxYTVol('rv')); rvYT.cueVideoById(id); }catch(e){} });
   }
 }
 function rvToggle(){
@@ -4546,7 +4570,7 @@ function rvToggle(){
   rvMsg('');
   if(rvSrc==='a'){ rvA.play().catch(()=>rvMsg('음원을 재생할 수 없어요')); }
   else if(rvYT&&rvYTok){ rvYT.playVideo(); }
-  else{ rvMsg('불러오는 중…'); const id=rvId; rvYTEnsure(()=>{ if(rvSrc!=='y'||rvId!==id) return; rvMsg(''); rvYT.setVolume(rvVol); rvYT.cueVideoById(id); rvYT.playVideo(); }); }
+  else{ rvMsg('불러오는 중…'); const id=rvId; rvYTEnsure(()=>{ if(rvSrc!=='y'||rvId!==id) return; rvMsg(''); rvYT.setVolume(fxYTVol('rv')); rvYT.cueVideoById(id); rvYT.playVideo(); }); }
 }
 function rvPlayer(t){
   const id=mpYid(t.유튜브); if(!t.음원&&!id) return '';
@@ -4748,6 +4772,7 @@ applyTexts();
   vm.addEventListener('click',()=>{ fxVS.m=!fxVS.m; if(!fxVS.m&&fxVS.v===0) fxVS.v=60; paint(); save(); fxApplyAll(); });
   document.addEventListener('pointerdown',e=>{ if(vp.classList.contains('open')&&!vp.contains(e.target)&&!vb.contains(e.target)) vp.classList.remove('open'); },true);
   addEventListener('resize',()=>{ if(vp.classList.contains('open')) place(); });
+  window._fxPaint=paint;
   paint(); fxApplyAll();
 })();
 
