@@ -2243,8 +2243,17 @@ function cAvatar(el,p){
 }
 
 // 초기 화면
+const cImgKeep=[];
+function cPreload(p){   // 채팅창이 닫혀 있어도(display:none) 아바타 사진을 미리 받아 둬요. 그래야 첫 메시지부터 사진이 바로 떠요
+  if(!p||!p.아바타) return;
+  const im=new Image(); im.decoding='async'; im.src=U(p.아바타); cImgKeep.push(im); if(cImgKeep.length>8) cImgKeep.shift();
+}
 function cApplyChat(){
+  cPreload(채팅.상대); cPreload(채팅.나);
   cAvatar($('cwa1'),채팅.상대); cAvatar($('cwa2'),채팅.나); cAvatar($('tav'),채팅.상대);
+  // 이미 떠 있는 말풍선의 아바타도 새 설정으로 (설정 파일이 늦게 읽혀도 첫 메시지에 반영돼요)
+  document.querySelectorAll('#cwbody .g.them .av2').forEach(el=>cAvatar(el,채팅.상대));
+  document.querySelectorAll('#cwbody .g.me .av2').forEach(el=>cAvatar(el,채팅.나));
   $('cwnm').textContent=채팅.상대.이름; $('cwst').textContent=채팅.상대.상태; $('tnm').textContent=채팅.상대.이름;
   try{ cPingEnsure(); }catch(e){}
 }
