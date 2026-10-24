@@ -1,49 +1,3 @@
-// BGM 버튼 (음원 파일 주소 또는 유튜브 링크)
-let audio=null, playing=false, bgmSrc='';
-let bgYT=null, bgYTok=false, bgYTq=null, bgYid='', bgLoaded='';
-function bgYidOf(u){ const m=String(u||'').match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/|\/live\/)([\w-]{11})/); return m?m[1]:''; }
-function bgYTEnsure(cb){
-  if(bgYT&&bgYTok){ cb(); return; }
-  bgYTq=cb; if(bgYT) return;
-  const make=()=>{ bgYT=new YT.Player('bgyt',{width:'320',height:'180',playerVars:{playsinline:1,controls:0,rel:0,disablekb:1},events:{
-    onReady:()=>{ bgYTok=true; try{ bgYT.setVolume(fxYTVol('bg')); }catch(e){} const f=bgYTq; bgYTq=null; if(f) f(); },
-    onStateChange:e=>{ if(!bgYid) return; if(e.data===0){ try{ bgYT.seekTo(0); bgYT.playVideo(); }catch(x){} } },   // 끝나면 처음부터 반복
-    onError:e=>{ bgmFail(e.data===101||e.data===150?'퍼가기가 막힌 영상이에요':'재생할 수 없는 영상이에요'); }
-  }}); };
-  ytApi(make,()=>bgmFail('유튜브를 불러오지 못했어요'));
-}
-function renderBgm(){
-  $('bgmname').textContent=브금이름;
-  if(브금주소===bgmSrc) return;
-  bgmSrc=브금주소; if(audio){ audio.pause(); audio=null; }
-  try{ if(bgYT&&bgYTok) bgYT.pauseVideo(); }catch(e){}
-  playing=false; $('play').textContent='▶'; bgLoaded='';
-  bgYid=bgYidOf(브금주소);
-  if(bgYid){   // 유튜브 링크: 눌렀을 때 바로 나오도록 미리 준비해 둬요
-    bgYTEnsure(()=>{ try{ bgYT.cueVideoById(bgYid); bgLoaded=bgYid; }catch(e){} });
-  }else if(브금주소){ audio=new Audio(U(브금주소)); audio.loop=true; audio.addEventListener('error',()=>{ if(playing) bgmFail('음원을 불러오지 못했어요 · 주소 확인'); }); }
-}
-let bgmFailT=0;
-function bgmFail(msg){   // 재생이 안 될 때 버튼만 ❚❚로 남지 않게, 이유를 잠깐 보여줘요
-  playing=false; $('play').textContent='▶';
-  const n=$('bgmname'); n.textContent=msg; clearTimeout(bgmFailT); bgmFailT=setTimeout(()=>{ n.textContent=브금이름; },4000);
-}
-renderBgm();
-$('play').onclick=()=>{
-  playing=!playing;
-  if(playing) try{ mpPauseAll(); }catch(e){}
-  $('play').textContent=playing?'❚❚':'▶';
-  if(bgYid){
-    if(playing){
-      const go=()=>{ try{ bgYT.setVolume(fxYTVol('bg')); if(bgLoaded===bgYid) bgYT.playVideo(); else{ bgYT.loadVideoById(bgYid); bgLoaded=bgYid; } }catch(e){} };
-      if(bgYT&&bgYTok) go(); else bgYTEnsure(()=>{ if(playing) go(); });
-    }else{ try{ if(bgYT&&bgYTok) bgYT.pauseVideo(); }catch(e){} }
-    return;
-  }
-  if(playing&&!audio){ bgmFail('BGM 음원 주소가 비어 있어요'); return; }
-  if(audio){ playing?audio.play().catch(()=>{ bgmFail('음원을 불러오지 못했어요 · 주소 확인'); }):audio.pause(); }
-};
-
 <!DOCTYPE html>
 <html lang="ko" class="cfgwait">
 <head>
@@ -2176,14 +2130,30 @@ $('reopen').onclick=()=>ddayShow(true);
 $('dchipbtn').onclick=ddayToggle;
 ddayShow(true);   // 처음엔 켜진 상태로 시작해요 (꺼진 채 시작하려면 false)
 
-// BGM 버튼
+// BGM 버튼 (음원 파일 주소 또는 유튜브 링크)
 let audio=null, playing=false, bgmSrc='';
+let bgYT=null, bgYTok=false, bgYTq=null, bgYid='', bgLoaded='';
+function bgYidOf(u){ const m=String(u||'').match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/|\/live\/)([\w-]{11})/); return m?m[1]:''; }
+function bgYTEnsure(cb){
+  if(bgYT&&bgYTok){ cb(); return; }
+  bgYTq=cb; if(bgYT) return;
+  const make=()=>{ bgYT=new YT.Player('bgyt',{width:'320',height:'180',playerVars:{playsinline:1,controls:0,rel:0,disablekb:1},events:{
+    onReady:()=>{ bgYTok=true; try{ bgYT.setVolume(fxYTVol('bg')); }catch(e){} const f=bgYTq; bgYTq=null; if(f) f(); },
+    onStateChange:e=>{ if(!bgYid) return; if(e.data===0){ try{ bgYT.seekTo(0); bgYT.playVideo(); }catch(x){} } },   // 끝나면 처음부터 반복
+    onError:e=>{ bgmFail(e.data===101||e.data===150?'퍼가기가 막힌 영상이에요':'재생할 수 없는 영상이에요'); }
+  }}); };
+  ytApi(make,()=>bgmFail('유튜브를 불러오지 못했어요'));
+}
 function renderBgm(){
   $('bgmname').textContent=브금이름;
   if(브금주소===bgmSrc) return;
   bgmSrc=브금주소; if(audio){ audio.pause(); audio=null; }
-  playing=false; $('play').textContent='▶';
-  if(브금주소){ audio=new Audio(U(브금주소)); audio.loop=true; audio.addEventListener('error',()=>{ if(playing) bgmFail('음원을 불러오지 못했어요 · 주소 확인'); }); }
+  try{ if(bgYT&&bgYTok) bgYT.pauseVideo(); }catch(e){}
+  playing=false; $('play').textContent='▶'; bgLoaded='';
+  bgYid=bgYidOf(브금주소);
+  if(bgYid){   // 유튜브 링크: 눌렀을 때 바로 나오도록 미리 준비해 둬요
+    bgYTEnsure(()=>{ try{ bgYT.cueVideoById(bgYid); bgLoaded=bgYid; }catch(e){} });
+  }else if(브금주소){ audio=new Audio(U(브금주소)); audio.loop=true; audio.addEventListener('error',()=>{ if(playing) bgmFail('음원을 불러오지 못했어요 · 주소 확인'); }); }
 }
 let bgmFailT=0;
 function bgmFail(msg){   // 재생이 안 될 때 버튼만 ❚❚로 남지 않게, 이유를 잠깐 보여줘요
@@ -2195,7 +2165,14 @@ $('play').onclick=()=>{
   playing=!playing;
   if(playing) try{ mpPauseAll(); }catch(e){}
   $('play').textContent=playing?'❚❚':'▶';
-  if(playing&&!audio){ bgmFail(/youtu\.?be/i.test(브금주소)?'유튜브 링크는 BGM 버튼에서 안 돼요':'BGM 음원 주소가 비어 있어요'); return; }
+  if(bgYid){
+    if(playing){
+      const go=()=>{ try{ bgYT.setVolume(fxYTVol('bg')); if(bgLoaded===bgYid) bgYT.playVideo(); else{ bgYT.loadVideoById(bgYid); bgLoaded=bgYid; } }catch(e){} };
+      if(bgYT&&bgYTok) go(); else bgYTEnsure(()=>{ if(playing) go(); });
+    }else{ try{ if(bgYT&&bgYTok) bgYT.pauseVideo(); }catch(e){} }
+    return;
+  }
+  if(playing&&!audio){ bgmFail('BGM 음원 주소가 비어 있어요'); return; }
   if(audio){ playing?audio.play().catch(()=>{ bgmFail('음원을 불러오지 못했어요 · 주소 확인'); }):audio.pause(); }
 };
 
