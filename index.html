@@ -182,6 +182,9 @@ body{background:#0a0908;font-family:Consolas,'Courier New','Malgun Gothic',monos
   box-shadow:0 0 0 3px #16130f,0 0 0 4px #ffb020,inset 0 4px 10px rgba(0,0,0,.45)}
 .dot.ok{background:#7dff9b;animation:none;box-shadow:0 0 6px #7dff9b}
 </style>
+<style id="ww-cursor">
+html,body,*,.btn,.btn.ready,#btn{cursor:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFW0lEQVR42s2XW1CUZRjH/+/7frvLLnuCZTksLIzAQpCkJgdRc23CY42KumXl1FTTdNNMjtOFNibj2EUHs5uajjbZTROZ5TFSS1dxRtMQgYUF5bCAISC4B477Hd4ucIy0SUCInpnv7pvv+73P87z///MA/7Mgt57pC0YpSl0uBoBOx/91AKIAgDEKlwvsP8lIidMpAEBxWvw7nzy3oqcwTr8bQOpIRghcAJtSAKcTAghBQaTqvfaPN/NA5T6+e2ORP1dHdgGwgQBOQJjS0pORROdvy4ri4f1bh7jcyq8deZ+/uyTNFw+2HgQocU4hBC8BdQLCsvjoX8qK7MrgN5uGOe8a5lV7+bfrcng08BIIUOqa3HLc/tgpgLl9kMxGLZmbbCnurahS7JoeQXIUKA+lRvBMsW9NRXX3zU/rlHNzAVUHoEwqgM8Hzjknr7y+xZdi0a9P0KotoYario31MppiR6LVLIUHOx+v7eivvirJHlcW1LXd9w8x+q7zJwmhhODmQW/PmzBFkMrWPrn2RAU/8vlBnBRjyOaSbOn5OeHPuBK18rtahDm/LV6Tp4S8BBQAe3amzV3+VA5/IzV6+ItNDlmqWSXzzhel8E8z+NaFGEzQGl8FUiIouesg45beuyE4ByEkZmO2vWxprvQwF7rDuelMyF5biA5/AlcF/Gi4VMFee7vn6EX/LBejvw/ICigmqS8AgLKRMyVtWWdpKX1Zyz9YScM/bzXKNUdfkHnfYYl7iobOb1PxBfHCCcBiuPU+nXAT3nkrOQdjFIEztfKxjBRdcYSgmCWtWX4sL0SUmGVUjnmGJac0iLmRrY66+sF5zUFbKaNBkXNQAPx+AUZByF3uOvl43gNaV6rQExETKcNgagPXzyNy9GpmszeIufr29DpvoKA5aN3PaH94PBD3EhX+63YIX59Wrs9M0syfEcuyL18OiulRfqbR1AHGQiKbV7CE5KtibmSbw1PbV9ASsn4/Hoh7qtpeN1DiBNt1kpRbzeoldguxVVeFREdMkGo0VwDTIiIbilhCcouYZ2h31HtDBU1By35GB4bHAjEWWeVuH8CoFDjfOHwoLcnwhC0asZUVISkjJkA1Gi+IeTGRTStYgr1RzDe2Obz1oQWNgZh9Y4EYq67fbsqzDUNHHDb9qlijYqm63CdlWANUo6oDTAuJbFzO4uwtYr6pPc1TF5zfHMjZx1jnv5ZjPMbCOQejFL1nG5SyTLt2jdXAozzVfVKmNUhVrBYwO4lsWsrikprEfMO1tLqatoKmEPYxijDnYP8EMV5n45xDoFTuPtugHMtO0RVHa2WTp6ZPyowNUbXKCxK1GLJ+IYtPbhaXZIUdHV3qwqrWgR8owRDH3ZmYiLUqIxBK55l6+cSsVN26SEE21HsHpAyrn6rVLaCWLIhRG1hTp0/UXqtIDwwZC1puzD5MSPvAneo7UW9XFnEIbVTpcHvlU3PSItdGMFnv9Q5KmZZuqtIHcaFymBjViSwtVS05swfTTeKV9Wcb2Y+cS8EdO/6CmLCJuAHpEQUCodKFtw6GV14Pa28MS1AdOuqXy746ja7jJTzOQHjnDTUrL+8SUwwDaZEqZiAUfHQW7mv0dgPSIgUCIYO/7TwQXvmHGHlDBlWVHeiQfb3R8JTvAQ1dkhzWsGr/RcHdL/Z7+Pa/m9Z9j1c+QHECQiuR2k/X01MZNvVqX49iXJaHsOdSuxIR9mvONcjByuuqDdeDYid5FGQ8XjGRwTZx/gzjlxd3mvlHqwgvflA9kKjTrZiMjI91sQIA3fJM/YdP56j3AKrZAKZ+txg9S9w55ZRMw5pHSl1gt/aIadkxxxx/Ai1MUFzQH7vsAAAAAElFTkSuQmCC") 3 4,auto !important}
+</style>
 </head>
 <body>
 <div class="stage">
@@ -308,6 +311,37 @@ function 디데이갱신(){
 }
 디데이갱신(); setInterval(디데이갱신,60000);
 
+
+/* ===== 총알 날아가는 소리 (작게) ===== */
+const 총알소리음량 = 0.12;   // 0~1, 더 작게 하려면 숫자를 줄이세요
+function 총알소리(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    const ac=new AC(), t=ac.currentTime, V=총알소리음량;
+    const master=ac.createGain(); master.gain.value=V; master.connect(ac.destination);
+    const noise=(dur)=>{const n=Math.floor(ac.sampleRate*dur),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);
+      for(let i=0;i<n;i++)d[i]=Math.random()*2-1; const s=ac.createBufferSource(); s.buffer=b; return s};
+    // 1) 발사 "퓩" (짧고 부드럽게)
+    const s1=noise(.18), f1=ac.createBiquadFilter(), g1=ac.createGain();
+    f1.type='lowpass'; f1.frequency.setValueAtTime(2400,t); f1.frequency.exponentialRampToValueAtTime(300,t+.16);
+    g1.gain.setValueAtTime(.9,t); g1.gain.exponentialRampToValueAtTime(.001,t+.17);
+    s1.connect(f1); f1.connect(g1); g1.connect(master); s1.start(t);
+    // 2) 날아가며 멀어지는 "슈우웅"
+    const T=t+.05, s2=noise(1.1), f2=ac.createBiquadFilter(), g2=ac.createGain();
+    f2.type='bandpass'; f2.Q.value=2.2;
+    f2.frequency.setValueAtTime(3800,T); f2.frequency.exponentialRampToValueAtTime(500,T+1);
+    g2.gain.setValueAtTime(.0001,T); g2.gain.exponentialRampToValueAtTime(.55,T+.08);
+    g2.gain.exponentialRampToValueAtTime(.0001,T+1);
+    s2.connect(f2); f2.connect(g2); g2.connect(master); s2.start(T);
+    // 3) 얇은 휘파람 톤 (높은 음에서 낮은 음으로)
+    const o=ac.createOscillator(), go=ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(2600,T); o.frequency.exponentialRampToValueAtTime(420,T+.95);
+    go.gain.setValueAtTime(.0001,T); go.gain.exponentialRampToValueAtTime(.08,T+.06); go.gain.exponentialRampToValueAtTime(.0001,T+.95);
+    o.connect(go); go.connect(master); o.start(T); o.stop(T+1);
+    setTimeout(()=>{try{ac.close()}catch(e){}},1500);
+  }catch(e){}
+}
+
 // 로딩 → ENTER
 const $=id=>document.getElementById(id), stars=[...document.querySelectorAll('#stars span')];
 const start=performance.now(); let fired=false; const pill=document.querySelector('.pill');
@@ -341,6 +375,7 @@ $('btn').onclick=()=>{
   $('edot').classList.add('ok');
   $('estate').textContent='WELCOME';
   document.querySelector('.dial').classList.add('fire'); // 총알 발사!
+  총알소리();                                            // 총알 날아가는 소리
   if(이동할주소){
     setTimeout(()=>{document.body.style.transition='opacity .6s';document.body.style.opacity=0},1200); // 화면이 어두워지며
     setTimeout(()=>{location.href=이동할주소},1800);                                                    // 메인으로 이동
